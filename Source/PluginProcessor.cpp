@@ -95,6 +95,17 @@ void SimpleEQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+
+    juce::dsp::ProcessSpec spec;
+
+    spec.maximumBlockSize = samplesPerBlock;
+
+    spec.numChannels = 1;
+
+    spec.sampleRate = sampleRate;
+
+    rightChain.prepare (spec);
+    leftChain.prepare (spec);
 }
 
 void SimpleEQAudioProcessor::releaseResources()
@@ -144,7 +155,19 @@ void SimpleEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
+    juce::dsp::AudioBlock<float> block (buffer);
+
+    auto leftBlock = block.getSingleChannelBlock (0);
+    auto rightBlock = block.getSingleChannelBlock (1);
+
+    juce::dsp::ProcessContextReplacing<float> leftContext(leftBlock);
+    juce::dsp::ProcessContextReplacing<float> rightContext(rightBlock);
+
+    leftChain.process(leftContext);
+    rightChain.process(rightContext);
+
+
+ /* // example from template   // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
     // Make sure to reset the state if your inner loop is processing
     // the samples and the outer loop is handling the channels.
@@ -155,7 +178,7 @@ void SimpleEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
         auto* channelData = buffer.getWritePointer (channel);
 
         // ..do something to the data...
-    }
+    }*/
 }
 
 //==============================================================================
